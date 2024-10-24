@@ -36,7 +36,8 @@ public class Formulario extends Application {
     private TextField carteraText;
     private TextField folioText;
     private Button exportarBtn;
-    private int contAsistentes;
+    private Button cambiarNameBtn;
+    private int contAsistentes = 0;
     private String fileName;
     private Label asistenciasLabel;
     List<String> maestros;
@@ -57,6 +58,7 @@ public class Formulario extends Application {
         Label folioLabel = new Label("Folio:");
         Label eventoLabel = new Label("Evento:");
         Label asistenciasTextoLabel = new Label("Asistentes:");
+
         // Crear un Label para mostrar el número
         asistenciasLabel = new Label(); // Reemplaza "42" por el número que desees
         asistenciasLabel.setStyle("-fx-font-size: 100px; -fx-text-fill: black;"); // Tamaño de fuente y color
@@ -122,7 +124,15 @@ public class Formulario extends Application {
             }
             cspText.requestFocus();
         });
+
         exportarBtn.getStyleClass().add("btn-success");
+
+        cambiarNameBtn = new Button("Cambiar Evento");
+        cambiarNameBtn.setOnMouseClicked(event -> {
+            alertaTitulo();
+            cspText.requestFocus();
+        });
+        cambiarNameBtn.getStyleClass().add("btn-success");
 
         alertaTitulo();
 
@@ -139,7 +149,7 @@ public class Formulario extends Application {
         // Crear vbox a la derecha
         VBox rigthVbox = new VBox(10); // 10 es el espaciado entre nodos
         rigthVbox.setAlignment(Pos.CENTER); // Centra el contenido en VBox
-        rigthVbox.getChildren().addAll(asistenciasTextoLabel, asistenciasLabel);
+        rigthVbox.getChildren().addAll(cambiarNameBtn, asistenciasTextoLabel, asistenciasLabel);
 
         // Asignar tamaño preferido a los espaciadores (ancho)
         leftSpacer.setPrefWidth(250);  // Espacio a la izquierda
@@ -153,7 +163,7 @@ public class Formulario extends Application {
         scene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
         scene.setOnKeyReleased(this::handleQRCodeInput);
 
-        contAsistentes = 0;
+        asistenciasLabel.setText(String.valueOf(contAsistentes));
 
         stage.setTitle("Registro de Asistencia de Maestros");
         stage.setScene(scene);
@@ -239,6 +249,18 @@ public class Formulario extends Application {
     }
 
     private boolean mostrarAlerta() {
+        if (eventoText.getText().equals("")){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Se necesita elegir un Evento antes de crear el archivo");
+            alert.setContentText("Por favor seleccione un nombre para el evento presionando el botón \"Cambiar Evento\".");
+            alert.show();
+
+            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            pause.setOnFinished(event -> alert.close());
+            pause.play();
+            return false;
+        }
         // Crear una alerta de tipo confirmación
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmación");
@@ -263,42 +285,12 @@ public class Formulario extends Application {
     private void alertaTitulo() {
         // Crear un ComboBox con algunas opciones
         ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll( "ASUNTOS ECONÓMICOS",
+        comboBox.getItems().addAll("ASUNTOS ECONÓMICOS",
                 "ASUNTOS PROFESIONALES Y DE CULTURA GENERAL", "ASUNTOS MÉDICO ASISTENCIALES",
                 "ASUNTOS POLÍTICO SINDICALES", "ASUNTOS GENERALES");
 
         // Seleccionar el primer valor por defecto
         comboBox.setValue(comboBox.getItems().get(0));
-
-        // Crear una alerta
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Selecciona una opción");
-        alert.setHeaderText("Por favor, selecciona una opción de la lista:");
-
-        // Añadir el ComboBox al contenido del DialogPane
-        DialogPane dialogPane = alert.getDialogPane();
-        VBox content = new VBox(10, comboBox); // VBox con un espacio de 10 entre los elementos
-        dialogPane.setContent(content);
-
-        // Mostrar la alerta y esperar la respuesta del usuario
-        alert.showAndWait().ifPresentOrElse(response -> {
-            fileName = comboBox.getValue();
-            eventoText.setText(fileName);
-        }, () ->{
-            Platform.exit();
-        });
-
-    }
-
-    private void alertaTitulo(int val) {
-        // Crear un ComboBox con algunas opciones
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll( "ASUNTOS ECONÓMICOS",
-                "ASUNTOS PROFESIONALES Y DE CULTURA GENERAL", "ASUNTOS MÉDICO ASISTENCIALES",
-                "ASUNTOS POLÍTICO SINDICALES", "ASUNTOS GENERALES");
-
-        // Seleccionar el primer valor por defecto
-        comboBox.setValue(comboBox.getItems().get(val));
 
         // Crear una alerta
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -318,19 +310,15 @@ public class Formulario extends Application {
 
     }
 
-    private void alertaExcelCreado(){
+    private void alertaExcelCreado() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Alerta");
+        alert.setTitle("Exito");
         alert.setHeaderText("El archivo se ha creado Exitosamente");
         alert.setContentText("Puede encontrar el archivo en su escritorio.");
         alert.show();
 
         PauseTransition pause = new PauseTransition(Duration.seconds(5));
-        pause.setOnFinished(event -> {
-            alert.close();
-            // Llamar a la segunda alerta al cerrar la primera
-            Platform.runLater(this::alertaTitulo);
-        });
+        pause.setOnFinished(event -> alert.close());
         pause.play();
     }
 

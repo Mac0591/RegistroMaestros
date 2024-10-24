@@ -254,14 +254,14 @@ public class Exportar {
             sheet.autoSizeColumn(i);
         }
 
-        String userHome = System.getProperty("user.home");
-        Path desktopPath = Paths.get(userHome, "Desktop"); // O "Escritorio" O "Desktop"
+        String desktopPath = System.getProperty("user.home") + File.separator + "Desktop";// "Escritorio" si esta en español
+
 
         // Nombre del archivo que quieres guardar
-        Path filePath = desktopPath.resolve(fileName+ ".xlsx");
+        fileName = generateUniqueFileName(desktopPath, fileName, ".xlsx");
 
         // Escribir el archivo en el sistema
-        try (FileOutputStream fileOut = new FileOutputStream(filePath.toFile())) {
+        try (FileOutputStream fileOut = new FileOutputStream(fileName)) {
             workbook.write(fileOut);
         } catch (IOException e) {
             e.printStackTrace();
@@ -295,6 +295,19 @@ public class Exportar {
                 break;
         }
         return mesa;
+    }
+
+    private static String generateUniqueFileName(String directory, String baseName, String extension) {
+        String newFileName =  directory + File.separator + baseName + extension;
+        int counter = 1;
+
+        // Si el archivo ya existe, generar un nombre nuevo
+        while (new File(newFileName).exists()) {
+            newFileName = directory + File.separator + baseName + "_" + counter + extension;
+            counter++;
+        }
+
+        return newFileName;
     }
 
 }
