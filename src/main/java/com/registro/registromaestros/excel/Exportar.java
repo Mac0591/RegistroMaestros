@@ -12,15 +12,18 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Exportar {
 
-    public void writeDataToExcel(ArrayList<Profesor> asistentes, File file) {
+    public void writeDataToExcel(ArrayList<Profesor> asistentes, String fileName) {
         // Crear un nuevo workbook (archivo Excel)
         Workbook workbook = new XSSFWorkbook();
         // Crear una nueva hoja en el workbook
-        Sheet sheet = workbook.createSheet("Maestros");
+        Sheet sheet = workbook.createSheet(fileName);
 
+        String mesa = obtenerMesa(fileName);
 
         //Creamos el titulo
         //Agregamos las imagenes
@@ -72,8 +75,8 @@ public class Exportar {
 
             // Insertar la imagen en el dibujo
             drawing.createPicture(anchor, pictureIdx);
-        }catch (IOException e){
-            System.err.println("Ha ocurrido un error: "+e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Ha ocurrido un error: " + e.getMessage());
         }
 
         //Estilo de la fuente para el titulo
@@ -94,6 +97,13 @@ public class Exportar {
         fuenteFecha.setFontHeightInPoints((short) 8);
         fuenteFecha.setBold(true);
         fuenteFecha.setUnderline(FontUnderline.SINGLE);
+
+        //Estilo de la fuente para el nombre de la hoja
+        XSSFFont fuenteMesa = (XSSFFont) workbook.createFont();
+        fuenteMesa.setFontName("Calibri"); // Establecer el nombre de la fuente
+        fuenteMesa.setFontHeightInPoints((short) 12);
+        fuenteMesa.setBold(true);
+        fuenteMesa.setUnderline(FontUnderline.SINGLE);
 
         //Estilo de la fuente para los datos escaneados
         XSSFFont fuenteDatos = (XSSFFont) workbook.createFont();
@@ -137,6 +147,12 @@ public class Exportar {
         style.setBorderRight(BorderStyle.THIN);
         style.setFont(fuenteDatos);
 
+        //Creamos el estilo centrado, negritas, y subrayado
+        CellStyle estiloMesa = workbook.createCellStyle();
+        estiloMesa.setAlignment(HorizontalAlignment.CENTER); // Alinear horizontalmente al centro
+        estiloMesa.setVerticalAlignment(VerticalAlignment.CENTER); // Alinear verticalmente al centro
+        estiloMesa.setFont(fuenteMesa);
+
 
         //Creamos las celdas unidas
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 2, 6));
@@ -163,6 +179,14 @@ public class Exportar {
         cell = row.createCell(2);
         cell.setCellValue("XXV CONGRESO ESTATAL ORDINARIO");
         cell.setCellStyle(styleCenter);
+        row = sheet.createRow(4);
+        cell = row.createCell(2);
+        cell.setCellValue(mesa);
+        cell.setCellStyle(estiloMesa);
+        row = sheet.createRow(5);
+        cell = row.createCell(2);
+        cell.setCellValue(fileName);
+        cell.setCellStyle(estiloMesa);
 
         //fila 7 (valor 6) fecha
         row = sheet.createRow(6);
@@ -230,8 +254,14 @@ public class Exportar {
             sheet.autoSizeColumn(i);
         }
 
+        String userHome = System.getProperty("user.home");
+        Path desktopPath = Paths.get(userHome, "Desktop"); // O "Escritorio" O "Desktop"
+
+        // Nombre del archivo que quieres guardar
+        Path filePath = desktopPath.resolve(fileName+ ".xlsx");
+
         // Escribir el archivo en el sistema
-        try (FileOutputStream fileOut = new FileOutputStream(file)) {
+        try (FileOutputStream fileOut = new FileOutputStream(filePath.toFile())) {
             workbook.write(fileOut);
         } catch (IOException e) {
             e.printStackTrace();
@@ -243,6 +273,28 @@ public class Exportar {
                 e.printStackTrace();
             }
         }
+    }
+
+    public String obtenerMesa(String fileName){
+        String mesa= "";
+        switch (fileName){
+            case "ASUNTOS ECONÓMICOS":
+                mesa = "MESA I";
+                break;
+            case "ASUNTOS PROFESIONALES Y DE CULTURA GENERAL":
+                mesa = "MESA II";
+                break;
+            case "ASUNTOS MÉDICO ASISTENCIALES":
+                mesa = "MESA III";
+                break;
+            case "ASUNTOS POLÍTICO SINDICALES":
+                mesa = "MESA IV";
+                break;
+            case "ASUNTOS GENERALES":
+                mesa = "MESA V";
+                break;
+        }
+        return mesa;
     }
 
 }

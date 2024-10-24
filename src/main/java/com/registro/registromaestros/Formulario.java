@@ -5,6 +5,7 @@ import com.registro.registromaestros.excel.Lector;
 import com.registro.registromaestros.model.Profesor;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -13,12 +14,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.kordamp.bootstrapfx.BootstrapFX;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class Formulario extends Application {
     private ImageView imageView;
     private ImageView logoView;
     private TextField nombreText;
-    private TextField cantidadText;
+    private TextField eventoText;
     private TextField cspText;
     private TextField regionText;
     private TextField delegacionText;
@@ -36,6 +37,8 @@ public class Formulario extends Application {
     private TextField folioText;
     private Button exportarBtn;
     private int contAsistentes;
+    private String fileName;
+    private Label asistenciasLabel;
     List<String> maestros;
     ArrayList<Profesor> asistencias;
     private StringBuilder qrDataBuilder = new StringBuilder(); // Para almacenar los datos leídos
@@ -52,7 +55,11 @@ public class Formulario extends Application {
         Label delegacionLabel = new Label("Delegacion Sindical:");
         Label carteraLabel = new Label("Cartera:");
         Label folioLabel = new Label("Folio:");
-        Label cantidadLabel = new Label("Asistentes:");
+        Label eventoLabel = new Label("Evento:");
+        Label asistenciasTextoLabel = new Label("Asistentes:");
+        // Crear un Label para mostrar el número
+        asistenciasLabel = new Label(); // Reemplaza "42" por el número que desees
+        asistenciasLabel.setStyle("-fx-font-size: 100px; -fx-text-fill: black;"); // Tamaño de fuente y color
 
         // Crear campos de texto no editables
         nombreText = new TextField();
@@ -67,10 +74,9 @@ public class Formulario extends Application {
         regionText.setEditable(false);
         regionText.setAlignment(Pos.CENTER);
 
-        cantidadText = new TextField();
-        cantidadText.setEditable(false);
-        cantidadText.setAlignment(Pos.CENTER);
-        cantidadText.setText("0");
+        eventoText = new TextField();
+        eventoText.setEditable(false);
+        eventoText.setAlignment(Pos.CENTER);
 
         delegacionText = new TextField();
         delegacionText.setEditable(false);
@@ -103,54 +109,48 @@ public class Formulario extends Application {
         exportarBtn = new Button("Exportar Excel");
         exportarBtn.setOnMouseClicked(event -> {
             if (mostrarAlerta()) {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle("Guardar archivo Excel");
+                // Llamar al método que crea el archivo Excel
+                Exportar export = new Exportar();
+                export.writeDataToExcel(asistencias, fileName);
+                asistencias.clear();
+                asistenciasLabel.setText("0");
+                cargarTexto(new Profesor());
+                contAsistentes = 0;
+                imageView.setImage(null);
+                alertaExcelCreado();
 
-                // Filtrar para que solo permita guardar archivos con extensión .xlsx
-                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Archivos Excel (*.xlsx)", "*.xlsx");
-                fileChooser.getExtensionFilters().add(extFilter);
-
-                // Mostrar el diálogo de guardar y obtener la ruta seleccionada
-                File file = fileChooser.showSaveDialog(stage);
-
-                if (file != null) {
-                    // Asegurarse de que el archivo tenga la extensión correcta
-                    if (!file.getPath().endsWith(".xlsx")) {
-                        file = new File(file.getPath() + ".xlsx");
-                    }
-
-                    // Llamar al método que crea el archivo Excel
-                    Exportar export = new Exportar();
-                    export.writeDataToExcel(asistencias, file);
-                    asistencias.clear();
-                    cantidadText.setText("0");
-                    cargarTexto(new Profesor());
-                    contAsistentes=0;
-                }
             }
             cspText.requestFocus();
         });
+        exportarBtn.getStyleClass().add("btn-success");
+
+        alertaTitulo();
 
         VBox vbox = new VBox(10); // 10 es el espaciado entre nodos
         vbox.setAlignment(Pos.CENTER); // Centra el contenido en VBox
-        vbox.getChildren().addAll(logoView, cspLabel, cspText,nombreLabel,nombreText,regionLabel,regionText,
-                delegacionLabel,delegacionText,carteraLabel,carteraText,folioLabel,folioText, cantidadLabel,
-                cantidadText, imageView, exportarBtn);
+        vbox.getChildren().addAll(logoView, eventoLabel, eventoText, cspLabel, cspText, nombreLabel,
+                nombreText, regionLabel, regionText, delegacionLabel, delegacionText, carteraLabel,
+                carteraText, folioLabel, folioText, imageView, exportarBtn);
         BorderPane borderPane = new BorderPane();
         borderPane.setCenter(vbox);
         // Crear espaciadores (puedes usar Region o VBox vacíos para los lados)
         Region leftSpacer = new Region();
-        Region rightSpacer = new Region();
+
+        // Crear vbox a la derecha
+        VBox rigthVbox = new VBox(10); // 10 es el espaciado entre nodos
+        rigthVbox.setAlignment(Pos.CENTER); // Centra el contenido en VBox
+        rigthVbox.getChildren().addAll(asistenciasTextoLabel, asistenciasLabel);
 
         // Asignar tamaño preferido a los espaciadores (ancho)
-        leftSpacer.setPrefWidth(200);  // Espacio a la izquierda
-        rightSpacer.setPrefWidth(200); // Espacio a la derecha
+        leftSpacer.setPrefWidth(250);  // Espacio a la izquierda
+        rigthVbox.setPrefWidth(250); // Espacio a la derecha
 
         // Agregar espaciadores a los lados del BorderPane
         borderPane.setLeft(leftSpacer);
-        borderPane.setRight(rightSpacer);
+        borderPane.setRight(rigthVbox);
         // Crear la escena y agregar el GridPane
-        Scene scene = new Scene(borderPane, 700, 800);
+        Scene scene = new Scene(borderPane, 800, 800);
+        scene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
         scene.setOnKeyReleased(this::handleQRCodeInput);
 
         contAsistentes = 0;
@@ -160,27 +160,27 @@ public class Formulario extends Application {
         stage.show();
     }
 
-    public void dataExists(Profesor profesor){
+    public void dataExists(Profesor profesor) {
         //Corroborar que no es un duplicado
         if (asistencias.contains(profesor)) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Alerta");
             alert.setHeaderText("Datos duplicados");
             alert.setContentText("Este QR ya se ha registrado.");
-            alert.show(); 
+            alert.show();
             PauseTransition pause = new PauseTransition(Duration.seconds(5));
             pause.setOnFinished(event -> alert.close()); // Cerrar la alerta al finalizar la pausa
             pause.play();
-        }else
+        } else
             //Corroborar si existe en el excel
-            if (maestros.contains(profesor.getCsp())){
+            if (maestros.contains(profesor.getCsp())) {
                 contAsistentes++;
-                cantidadText.setText(String.valueOf(contAsistentes));
+                asistenciasLabel.setText(String.valueOf(contAsistentes));
                 imageView.setImage(new Image(getClass().getResourceAsStream("/img/Correct.png")));
                 asistencias.add(profesor);
-        }else{
-            imageView.setImage(new Image(getClass().getResourceAsStream("/img/Wrong.png")));
-        }
+            } else {
+                imageView.setImage(new Image(getClass().getResourceAsStream("/img/Wrong.png")));
+            }
     }
 
     private void handleQRCodeInput(KeyEvent event) {
@@ -223,13 +223,13 @@ public class Formulario extends Application {
             alert.setHeaderText("Datos incorrectos");
             alert.setContentText("Favor de intentar leer de nuevo el código QR.");
             alert.show();
-            PauseTransition pause = new PauseTransition(Duration.seconds(2));
+            PauseTransition pause = new PauseTransition(Duration.seconds(1));
             pause.setOnFinished(event -> alert.close()); // Cerrar la alerta al finalizar la pausa
             pause.play();
         }
     }
 
-    public void cargarTexto(Profesor profesor){
+    public void cargarTexto(Profesor profesor) {
         nombreText.setText(profesor.getNombreProfesor());
         cspText.setText(profesor.getCsp());
         regionText.setText(profesor.getRegion());
@@ -260,16 +260,90 @@ public class Formulario extends Application {
         return result.isPresent() && result.get() == buttonYes;
     }
 
-    public String controlarAcentos(String acentuada){
+    private void alertaTitulo() {
+        // Crear un ComboBox con algunas opciones
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getItems().addAll( "ASUNTOS ECONÓMICOS",
+                "ASUNTOS PROFESIONALES Y DE CULTURA GENERAL", "ASUNTOS MÉDICO ASISTENCIALES",
+                "ASUNTOS POLÍTICO SINDICALES", "ASUNTOS GENERALES");
+
+        // Seleccionar el primer valor por defecto
+        comboBox.setValue(comboBox.getItems().get(0));
+
+        // Crear una alerta
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Selecciona una opción");
+        alert.setHeaderText("Por favor, selecciona una opción de la lista:");
+
+        // Añadir el ComboBox al contenido del DialogPane
+        DialogPane dialogPane = alert.getDialogPane();
+        VBox content = new VBox(10, comboBox); // VBox con un espacio de 10 entre los elementos
+        dialogPane.setContent(content);
+
+        // Mostrar la alerta y esperar la respuesta del usuario
+        alert.showAndWait().ifPresentOrElse(response -> {
+            fileName = comboBox.getValue();
+            eventoText.setText(fileName);
+        }, () ->{
+            Platform.exit();
+        });
+
+    }
+
+    private void alertaTitulo(int val) {
+        // Crear un ComboBox con algunas opciones
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getItems().addAll( "ASUNTOS ECONÓMICOS",
+                "ASUNTOS PROFESIONALES Y DE CULTURA GENERAL", "ASUNTOS MÉDICO ASISTENCIALES",
+                "ASUNTOS POLÍTICO SINDICALES", "ASUNTOS GENERALES");
+
+        // Seleccionar el primer valor por defecto
+        comboBox.setValue(comboBox.getItems().get(val));
+
+        // Crear una alerta
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Selecciona una opción");
+        alert.setHeaderText("Por favor, selecciona una opción de la lista:");
+
+        // Añadir el ComboBox al contenido del DialogPane
+        DialogPane dialogPane = alert.getDialogPane();
+        VBox content = new VBox(10, comboBox); // VBox con un espacio de 10 entre los elementos
+        dialogPane.setContent(content);
+
+        // Mostrar la alerta y esperar la respuesta del usuario
+        alert.showAndWait().ifPresent(response -> {
+            fileName = comboBox.getValue();
+            eventoText.setText(fileName);
+        });
+
+    }
+
+    private void alertaExcelCreado(){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Alerta");
+        alert.setHeaderText("El archivo se ha creado Exitosamente");
+        alert.setContentText("Puede encontrar el archivo en su escritorio.");
+        alert.show();
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(5));
+        pause.setOnFinished(event -> {
+            alert.close();
+            // Llamar a la segunda alerta al cerrar la primera
+            Platform.runLater(this::alertaTitulo);
+        });
+        pause.play();
+    }
+
+    public String controlarAcentos(String acentuada) {
         //0211 = ó
         //0205 = í
-        if (acentuada.equals("SRIO. DE PRENSA Y ACCI0211N POL0205TICA")){
+        if (acentuada.equals("SRIO. DE PRENSA Y ACCI0211N POL0205TICA")) {
             return "SRIO. DE PRENSA Y ACCIÓN POLÍTICA";
         }
         return acentuada;
     }
 
     public static void main(String[] args) {
-                launch();
+        launch();
     }
 }
