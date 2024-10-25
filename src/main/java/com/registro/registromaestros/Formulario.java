@@ -132,7 +132,7 @@ public class Formulario extends Application {
             alertaTitulo();
             cspText.requestFocus();
         });
-        cambiarNameBtn.getStyleClass().add("btn-success");
+        cambiarNameBtn.getStyleClass().add("btn-primary");
 
         alertaTitulo();
 
@@ -159,7 +159,7 @@ public class Formulario extends Application {
         borderPane.setLeft(leftSpacer);
         borderPane.setRight(rigthVbox);
         // Crear la escena y agregar el GridPane
-        Scene scene = new Scene(borderPane, 800, 800);
+        Scene scene = new Scene(borderPane, 1000, 1000);
         scene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
         scene.setOnKeyReleased(this::handleQRCodeInput);
 
